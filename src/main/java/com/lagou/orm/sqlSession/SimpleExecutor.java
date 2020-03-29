@@ -20,26 +20,26 @@ import java.util.List;
 public class SimpleExecutor implements Executor {
 
   @Override
-  public <T> List<T> query(Configuration configuration, MapperStatement mapperStatement, Object[] param) throws Exception{
+  public <T> List<T> query(Configuration configuration, MapperStatement mapperStatement, Object... param) throws Exception{
     Connection connection = configuration.getDataSource().getConnection();
-
+    //解析sql语句
     BoundSql boundSql = parseSql(mapperStatement.getSqlText());
     PreparedStatement preparedStatement = connection.prepareStatement(boundSql.getSqlText());
-
-    Class classType = getClassType(mapperStatement.getParameterType());
-    List parameterMappings = boundSql.getParameterMappings();
-
+    //获取入参对象类型
+    Class<?> classType = getClassType(mapperStatement.getParameterType());
+    List<ParameterMapping> parameterMappings = boundSql.getParameterMappings();
+    //绑定入参
     if (classType != null) {
       for (int i = 0; i < parameterMappings.size(); i++) {
-        Field field = classType.getDeclaredField(((ParameterMapping)parameterMappings.get(i)).getContent());
+        Field field = classType.getDeclaredField((parameterMappings.get(i)).getContent());
         field.setAccessible(true);
         Object o = field.get(param[0]);
         preparedStatement.setObject(i + 1, o);
       }
     }
     ResultSet resultSet = preparedStatement.executeQuery();
-
-    Class resultClass = getClassType(mapperStatement.getResultType());
+    //获取返回对象类型
+    Class<?> resultClass = getClassType(mapperStatement.getResultType());
     if (resultClass != null) {
       List list = new ArrayList();
       while (resultSet.next()) {
@@ -48,12 +48,10 @@ public class SimpleExecutor implements Executor {
         for (int i = 1; i <= metaData.getColumnCount(); i++)
         {
           String columnName = metaData.getColumnName(i);
-
           Object value = resultSet.getObject(columnName);
-
           PropertyDescriptor propertyDescriptor = new PropertyDescriptor(columnName, resultClass);
           Method writeMethod = propertyDescriptor.getWriteMethod();
-          writeMethod.invoke(o, new Object[] { value });
+          writeMethod.invoke(o, value);
         }
         list.add(o);
       }

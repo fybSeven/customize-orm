@@ -5,7 +5,9 @@ import java.util.List;
 
 public interface SqlSession {
 
-  <T> List<T> findAll(String paramString, Object[] paramArrayOfObject) throws SQLException, Exception;
+  <T> List<T> findAll(String paramString, Object... param) throws SQLException, Exception;
 
-  <T> T findOne(String paramString, Object[] paramArrayOfObject) throws Exception;
+  <T> T findOne(String paramString, Object... param) throws Exception;
+
+  <T> T getMapper(Class<T> typeClass);
 }
